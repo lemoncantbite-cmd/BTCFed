@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BTCFeed</title>
+<style>
+:root{--bg:#f6f6f4;--card:#fff;--tx:#1a1a1a;--mu:#6b6b66;--bd:#e4e4df;--ac:#2557d6;--hi:#eef2fd;--up:#1c8a4b;--dn:#d1442f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121212;--card:#1b1b1b;--tx:#ececec;--mu:#9a9a94;--bd:#2c2c2a;--ac:#7ea2ff;--hi:#1c2438}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{max-width:680px;margin:0 auto}
+header{position:sticky;top:0;background:var(--bg);padding:10px 12px 6px;border-bottom:1px solid var(--bd);z-index:2}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+h1{font-size:16px;margin:0}
+.stat{font-size:12px;color:var(--mu)}.stat b{color:var(--ac)}
+.bar{display:flex;gap:6px;overflow-x:auto;padding:6px 0 0;scrollbar-width:none;align-items:center}
+.bar::-webkit-scrollbar{display:none}.bar:empty{display:none}
+.lb{flex:none;font-size:11px;color:var(--mu);width:52px}
+.chip{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:3px 10px;font-size:12px;cursor:pointer}
+.chip small{color:var(--mu);margin-left:4px}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}.chip.on small{color:#ffffffb0}
+.chip.sq{border-radius:6px}
+.tools{display:flex;justify-content:space-between;align-items:center;padding:7px 0 2px;font-size:12px;color:var(--mu);gap:8px}
+.tools label{display:flex;gap:5px;align-items:center;cursor:pointer}
+.tools button{background:none;border:0;color:var(--ac);font-size:12px;cursor:pointer;padding:2px}
+.tools .pb{border:1px solid var(--bd);border-radius:6px;padding:3px 9px;color:var(--tx);background:var(--card)}
+#panel{display:none;padding:8px 0 2px}
+#panel.show{display:block}
+#q{width:100%;padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font-size:13px}
+#pc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:30vh;overflow:auto}
+ul{list-style:none;margin:0;padding:0}
+li{background:var(--card);border-bottom:1px solid var(--bd);padding:8px 12px;cursor:pointer}
+li:hover{background:var(--hi)}
+li.read .h{color:var(--mu);font-weight:400}li.read .dot{opacity:.25}
+.row{display:flex;gap:8px;align-items:flex-start}
+.dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:5px}
+.h{font-weight:600;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+li.open .h{-webkit-line-clamp:unset;line-clamp:unset}
+.m{font-size:11.5px;color:var(--mu);margin-top:2px}.m i{font-style:normal;color:var(--ac)}
+.x{display:none;margin:6px 0 2px 16px}li.open .x{display:block}
+.x p{margin:0 0 6px}
+.x button,.x a{display:inline-block;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:6px;padding:3px 9px;font-size:12px;margin-right:6px;cursor:pointer;text-decoration:none}
+.empty{padding:48px 16px;text-align:center;color:var(--mu)}
+.tools{flex-wrap:wrap}
+.tools select{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:2px 4px;font-size:12px}
+.ev{color:var(--tx);font-weight:600}
+li.p3{border-left:3px solid var(--dn)}
+li.p2{border-left:3px solid #e0a31a}
+.bd{font-weight:700;font-style:normal}
+.bd.h3{color:var(--dn)}.bd.h2{color:#c58a0a}
+#pin{margin-top:6px}
+#linkPanel{display:none;flex-wrap:wrap;gap:6px;padding:6px 0 0}
+#linkPanel.show{display:flex}
+#linkPanel a{border:1px solid var(--bd);background:var(--card);color:var(--ac);border-radius:6px;padding:4px 10px;font-size:12.5px;text-decoration:none}
+#linkPanel a:hover{background:var(--hi)}
+.pc2{border:1px solid var(--bd);background:var(--card);border-radius:8px;padding:7px 10px;font-size:13px}
+.pc2 .r{display:flex;gap:14px;flex-wrap:wrap;margin-top:3px}
+.pc2 .r span{color:var(--mu)}.pc2 .r b{color:var(--tx)}
+.pc2 .v{margin-top:4px;font-weight:700}
+.pc2 .n{font-size:11px;color:var(--mu);font-weight:400}
+#pinForm{display:none;margin-top:6px;gap:6px;flex-wrap:wrap}
+#pinForm.show{display:flex}
+#pinForm input{width:calc(50% - 3px);padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);font-size:13px}
+#pinForm button{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer}
+.app{max-width:1500px}
+@media(min-width:760px){ul{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 12px;align-items:start;padding:8px 0}li{border:1px solid var(--bd);border-radius:8px}.empty{grid-column:1/-1}}
+@media(min-width:1500px){ul{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="top"><h1>BTCFeed</h1><div class="stat"><span id="live"></span> · <span id="stat"></span></div></div>
+  <div class="bar" id="linkBar"><span class="lb">Links</span><button class="chip sq" id="offBtn">🏛 Official</button><button class="chip sq" id="sqBtn">📡 Squawk</button></div>
+  <div id="linkPanel"></div>
+  <div class="bar" id="typeBar"></div>
+  <div class="bar" id="ctryBar"></div>
+  <div class="tools">
+    <div><button class="pb" id="srcBtn">Sources ▾</button> <button id="clear">Clear</button></div>
+    <label><input type="checkbox" id="unread"> Unread</label>
+    <label class="ev"><input type="checkbox" id="ev"> ⚡ Event mode</label>
+    <select id="sortSel"><option value="t">Latest</option><option value="p">Priority</option></select>
+    <button id="pinBtn">📌 Data</button>
+    <button id="all">Mark all read</button>
+  </div>
+  <div id="pin"></div>
+  <div id="pinForm">
+    <input id="pn" placeholder="Event (e.g. US CPI m/m)">
+    <input id="pf" placeholder="Forecast (e.g. 0.3)">
+    <input id="pa" placeholder="Actual (e.g. 0.4)">
+    <input id="pp" placeholder="Previous (e.g. 0.2)">
+    <button id="pSave">Save</button><button id="pClr">Clear</button>
+  </div>
+  <div id="panel"><input id="q" placeholder="Search source... (bbc, reddit, hindu)"><div id="pc"></div></div>
+</header>
+<ul id="list"></ul>
+</div>
+<script>
+/* ---------- DEMO DATA (API lagane par hata dena) ----------
+Item shape: { id, title, summary, source, type("social"|"newspaper"), country,
+              url, publishedAt(ISO), readMin, sentiment(-1..1, optional) } */
+function mins(n){return new Date(Date.now()-n*6e4).toISOString()}
+var DEMO=[
+{title:"Open-source model beats larger rivals on coding benchmarks at a fraction of the cost",summary:"A new open model scores higher on common coding tests while running on a single GPU. Weights are public and the licence allows commercial use.",source:"X",type:"social",country:"USA",url:"https://example.com/1",publishedAt:mins(6),readMin:3,sentiment:0.52},
+{title:"Sensex closes higher as IT and banking stocks lead the rally",summary:"Benchmarks ended the session up, led by IT and private banks. Foreign inflows picked up and the rupee stayed steady.",source:"The Hindu",type:"newspaper",country:"India",url:"https://example.com/2",publishedAt:mins(14),readMin:2,sentiment:0.41},
+{title:"Thread: why every dev should learn SQL before picking an ORM",summary:"Top comments argue ORMs hide slow queries. Most agree on learning raw SQL first, then using an ORM for convenience.",source:"Reddit",type:"social",country:"USA",url:"https://example.com/3",publishedAt:mins(22),readMin:2,sentiment:0.08},
+{title:"State announces new rail link to cut regional travel time by nearly an hour",summary:"The project is approved and funded. Work starts next quarter, with the first phase targeted for completion in two years.",source:"Times of India",type:"newspaper",country:"India",url:"https://example.com/4",publishedAt:mins(31),readMin:2,sentiment:0.35},
+{title:"Leaders agree on framework to cut shipping emissions by the end of the decade",summary:"The deal sets phased targets and a shared fuel standard. Enforcement details are left to a later round of talks.",source:"BBC",type:"newspaper",country:"UK",url:"https://example.com/5",publishedAt:mins(45),readMin:3,sentiment:0.12},
+{title:"Late goal seals a 2-1 win and moves the home side to the top of the table",summary:"An 89th-minute winner decided it. The team now leads by two points with one match in hand.",source:"The Guardian",type:"newspaper",country:"UK",url:"https://example.com/6",publishedAt:mins(58),readMin:1,sentiment:0.6},
+{title:"Phone makers shift to larger batteries as fast charging hits its limit",summary:"Brands are adding 6000mAh+ cells using silicon-carbon tech instead of pushing charging speeds higher.",source:"X",type:"social",country:"India",url:"https://example.com/7",publishedAt:mins(75),readMin:2,sentiment:0.2},
+{title:"Central bank holds rates steady, signals cuts if inflation keeps easing",summary:"Policy rate unchanged. The statement hints at a cut early next year if price pressures keep falling.",source:"New York Times",type:"newspaper",country:"USA",url:"https://example.com/8",publishedAt:mins(95),readMin:3,sentiment:-0.05},
+{title:"Fintech startup raises fresh round to expand UPI-based lending in small towns",summary:"Funding will go to hiring and credit models for first-time borrowers in tier-3 cities.",source:"Times of India",type:"newspaper",country:"India",url:"https://example.com/9",publishedAt:mins(120),readMin:2,sentiment:0.3},
+{title:"AskReddit: What's one habit that actually saved you hours every week?",summary:"Most upvoted answers: batching email twice a day, meal prepping on Sundays and keeping a single running to-do list.",source:"Reddit",type:"social",country:"USA",url:"https://example.com/10",publishedAt:mins(150),readMin:2,sentiment:0.45},
+{title:"Floods cut road access to several villages as rivers cross danger mark",summary:"Relief teams are on site. Authorities urge residents in low-lying areas to move to shelters.",source:"The Guardian",type:"newspaper",country:"UK",url:"https://example.com/11",publishedAt:mins(190),readMin:2,sentiment:-0.62},
+{title:"Opener's century anchors a big total in the series decider",summary:"A fluent hundred set up a 300+ total. Bowlers struck early in the reply.",source:"The Hindu",type:"newspaper",country:"India",url:"https://example.com/12",publishedAt:mins(240),readMin:1,sentiment:0.55},
+{title:"Browser update adds tab grouping and a leaner memory mode",summary:"The release cuts idle tab memory use and adds auto-grouping by topic. Rolling out over the next few days.",source:"X",type:"social",country:"USA",url:"https://example.com/13",publishedAt:mins(300),readMin:2,sentiment:0.18},
+{title:"Festive season demand lifts auto sales to a multi-year high for the month",summary:"Two-wheelers and compact SUVs led. Dealers report longer waiting periods on popular models.",source:"BBC",type:"newspaper",country:"India",url:"https://example.com/14",publishedAt:mins(420),readMin:2,sentiment:0.38}
+];
+
+/* ---------- SUPABASE CONFIG (yahan apni 2 values daalo) ---------- */
+var SUPABASE_URL = "https://xthlrlakkrvblcycadke.supabase.co";
+var SUPABASE_ANON = "sb_publishable_vZqahqfkWlHCs64uUrEz5w_gI-KJKJN";
+
+function loadFeed(keep){
+  if(!SUPABASE_URL || !SUPABASE_ANON){setFeed(DEMO);return}   // config khali = demo dikhega
+  var since = new Date(Date.now()-24*36e5).toISOString();   // sirf pichle 24 ghante ki news
+  var url = SUPABASE_URL + "/rest/v1/feed?select=*&order=publishedAt.desc&limit=300&publishedAt=gte."+encodeURIComponent(since);
+  fetch(url,{headers:{apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON}})
+  .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
+  .then(function(d){
+    if(keep&&document.querySelector("li.open"))return;   // koi headline khuli hai toh refresh skip
+    setFeed(d,keep);lastOk=new Date();drawStat()})
+  .catch(function(){if(!items.length)$("list").innerHTML="<div class='empty'>Feed load nahi hua. Retry karo.</div>"});
+}
+
+var $=function(id){return document.getElementById(id)};
+var items=[],selSrc={},selCtry={},type="All",readSet={},openCnt={};
+function ld(k){try{return JSON.parse(localStorage.getItem(k)||"{}")}catch(e){return{}}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+readSet=ld("nf_read");
+var TL={social:"Social",newspaper:"Newspapers",macro:"Macro / US"};
+var list=$("list"),un=$("unread");
+function has(o){return Object.keys(o).length>0}
+function color(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return"hsl("+h+",60%,48%)"}
+function ago(iso){var m=Math.round((Date.now()-new Date(iso))/6e4);if(isNaN(m))return"";m=Math.max(1,m);return m<60?m+"m":m<1440?Math.round(m/60)+"h":Math.round(m/1440)+"d"}
+function count(key){var o={};items.forEach(function(x){if(x[key])o[x[key]]=(o[x[key]]||0)+1});return o}
+function byCnt(c){return Object.keys(c).sort(function(a,b){return c[b]-c[a]})}
+function chip(p,label,on,fn,cnt,cls){var b=document.createElement("button");b.className="chip "+(cls||"")+(on?" on":"");b.appendChild(document.createTextNode(label));if(cnt!=null){var s=document.createElement("small");s.textContent=cnt;b.appendChild(s)}b.onclick=fn;p.appendChild(b)}
+function toggle(o,k){if(o[k])delete o[k];else o[k]=1;render()}
+function lbl(p,t){var s=document.createElement("span");s.className="lb";s.textContent=t;p.appendChild(s)}
+
+/* ---------- PRIORITY SCORE ---------- */
+var KW_TIERS=[
+ [9,["cpi","ppi","pce","nfp","nonfarm","payrolls","fomc","powell","rate hike","rate cut","rate hikes","rate cuts","jobless claims","core inflation","fed decision","unemployment rate"]],
+ [6,["yields","treasury","dollar","dxy","inflation","gdp","fed","federal reserve","tariff","tariffs","recession","liquidations","jobs report","retail sales","ism","fed chair"]],
+ [3,["nasdaq","nvda","nvidia","aapl","apple","msft","microsoft","tsla","tesla","amzn","amazon","meta","google","alphabet","earnings","etf","wall street","s&p 500","bitcoin","btc"]]
+];
+var KW_RE=KW_TIERS.map(function(t){return[t[0],t[1].map(function(w){return new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b")})]});
+var SRC_W={"Federal Reserve":3,"BLS":3,"Investing.com News":1,"Investing.com Forex":1,"CNBC Economy":2,"CNBC Markets":2,"MarketWatch Live":2,"MarketWatch":1,"FXStreet":1,"CoinDesk":1,"The Block":1};
+function calc(x){
+  var t=((x.title||"")+" "+(x.summary||"")).toLowerCase().replace(/[-–—]/g," "),kw=0;
+  KW_RE.forEach(function(g){g[1].forEach(function(re){if(re.test(t))kw+=g[0]})});
+  kw=Math.min(kw,18);
+  var age=(Date.now()-new Date(x.publishedAt))/6e4,b=0;
+  if(age<5)b+=4;else if(age<30)b+=2;
+  b+=SRC_W[x.source]||0;
+  if(typeof x.sentiment==="number")b+=Math.min(2,Math.abs(x.sentiment)*2);
+  x.kw=kw;x.sc=Math.round(kw+(kw>0?b:Math.min(b,3)));
+}
+function badge(x){
+  if(x.kw>=9)return" · <span class='bd h3'>🔥 "+x.sc+"</span>";
+  if(x.kw>=6)return" · <span class='bd h2'>⚡ "+x.sc+"</span>";
+  return"";
+}
+/* ---------- PINNED DATA CARD (Actual vs Forecast) ---------- */
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function drawPin(){
+  var el=$("pin"),p=ld("nf_pin");el.innerHTML="";
+  if(!p.name)return;
+  var a=parseFloat(p.actual),f=parseFloat(p.forecast),v="",c="var(--mu)";
+  if(!isNaN(a)&&!isNaN(f)){
+    if(a>f){v="ACTUAL > FORECAST (hot)";c="var(--dn)"}
+    else if(a<f){v="ACTUAL < FORECAST (cool)";c="var(--up)"}
+    else v="IN LINE with forecast";
+  }
+  el.innerHTML="<div class='pc2'><b>📌 "+esc(p.name)+"</b><div class='r'><span>Forecast <b>"+esc(p.forecast||"-")+"</b></span><span>Actual <b>"+esc(p.actual||"-")+"</b></span><span>Previous <b>"+esc(p.prev||"-")+"</b></span></div>"+
+   (v?"<div class='v' style='color:"+c+"'>"+v+" <span class='n'>· CPI/PPI/rates mein hot aksar Nasdaq ke liye negative, cool positive. Hamesha aisa nahi hota.</span></div>":"")+"</div>";
+}
+
+function drawType(){
+  var el=$("typeBar");el.innerHTML="";var c=count("type"),n=byCnt(c);if(!n.length)return;
+  lbl(el,"Group");
+  chip(el,"All",type==="All",function(){type="All";render()},items.length,"");
+  n.forEach(function(k){chip(el,TL[k]||k,type===k,function(){type=k;render()},c[k],"")});
+}
+function drawCtry(){
+  var el=$("ctryBar");el.innerHTML="";var c=count("country"),n=byCnt(c);if(!n.length)return;
+  lbl(el,"Country");
+  chip(el,"All",!has(selCtry),function(){selCtry={};render()},null,"sq");
+  n.forEach(function(k){chip(el,k,!!selCtry[k],function(){toggle(selCtry,k)},c[k],"sq")});
+}
+function drawPanel(){
+  var pc=$("pc");pc.innerHTML="";var q=$("q").value.trim().toLowerCase(),c=count("source");
+  byCnt(c).filter(function(k){return k.toLowerCase().indexOf(q)>-1}).forEach(function(k){chip(pc,k,!!selSrc[k],function(){toggle(selSrc,k)},c[k],"")});
+  $("srcBtn").textContent="Sources "+($("panel").classList.contains("show")?"▴":"▾")+(has(selSrc)?" ("+Object.keys(selSrc).length+")":"");
+}
+function visible(){
+  items.forEach(calc);
+  var v=items.filter(function(x){return(!has(selSrc)||selSrc[x.source])&&(type==="All"||x.type===type)&&(!has(selCtry)||selCtry[x.country])&&(!un.checked||!readSet[x.id])&&(!$("ev").checked||(x.kw>=6&&x.sc>=10))});
+  if($("sortSel").value==="p")v.sort(function(a,b){return(b.sc-a.sc)||(new Date(b.publishedAt)-new Date(a.publishedAt))});
+  return v;
+}
+var lastOk=null,lastTxt="";
+function drawStat(){
+  var el=$("live");if(!el)return;
+  if(!lastOk){el.textContent="";return}
+  var sec=Math.round((Date.now()-lastOk)/1000);
+  el.innerHTML="<span style='color:"+(sec<45?"var(--up)":"var(--dn)")+"'>●</span> "+(sec<45?"LIVE":"STALE")+" · "+sec+"s pehle";
+}
+function stat(v){
+  var left=v.filter(function(x){return!readSet[x.id]}),full=left.reduce(function(a,x){return a+(x.readMin||1)},0);
+  $("stat").innerHTML=items.length?"<b>"+left.length+"</b> unread · skim ~"+Math.max(1,Math.round(left.length*0.12))+" min (vs "+full+")":"";
+}
+function sent(s){if(typeof s!=="number")return"";var c=s>0.15?"var(--up)":s<-0.15?"var(--dn)":"var(--mu)";return" · <span style='color:"+c+"'>"+(s>0.15?"▲":s<-0.15?"▼":"●")+" "+(s>0?"+":"")+s.toFixed(2)+"</span>"}
+function render(){
+  drawType();drawCtry();drawPanel();
+  list.innerHTML="";
+  if(!items.length){list.innerHTML="<div class='empty'>Pichle 24 ghante mein koi story nahi.<br>Worker chalao: python worker.py --loop</div>";stat([]);return}
+  var v=visible();stat(v);
+  if(!v.length){list.innerHTML="<div class='empty'>"+($("ev").checked?"Event mode: abhi koi high-priority headline nahi ✓":"Is filter mein kuch nahi ✓")+"</div>";return}
+  v.forEach(function(x){
+    var li=document.createElement("li");li.className=(readSet[x.id]?"read":"")+(x.kw>=9?" p3":x.kw>=6?" p2":"");
+    li.innerHTML="<div class='row'><span class='dot'></span><div><div class='h'></div><div class='m'></div></div></div><div class='x'><p></p><a target='_blank' rel='noopener'>Open ↗</a><button>"+(readSet[x.id]?"Mark unread":"Mark read")+"</button></div>";
+    li.querySelector(".dot").style.background=color(x.source||"");
+    li.querySelector(".h").textContent=x.title||"";
+    li.querySelector(".m").innerHTML="<span class='s'></span> · "+ago(x.publishedAt)+(x.country?" · <span class='c'></span>":"")+(x.readMin?" · <i>"+x.readMin+" min</i>":"")+sent(x.sentiment)+badge(x);
+    li.querySelector(".m .s").textContent=x.source||"";
+    if(x.country)li.querySelector(".m .c").textContent=x.country;
+    li.querySelector(".x p").textContent=x.summary||"";
+    var a=li.querySelector("a");if(x.url)a.href=x.url;else a.style.display="none";
+    li.querySelector("button").onclick=function(e){e.stopPropagation();readSet[x.id]=!readSet[x.id];sv("nf_read",readSet);render()};
+    li.onclick=function(e){
+      if(e.target.tagName==="A")return;
+      li.classList.toggle("open");
+      if(li.classList.contains("open")){
+        if(!readSet[x.id]){readSet[x.id]=true;sv("nf_read",readSet);li.classList.add("read");stat(visible())}
+      }
+    };
+    list.appendChild(li);
+  });
+}
+window.setFeed=function(arr,keep){
+  items=(arr||[]).map(function(x,i){x.id=x.id||x.url||("i"+i);return x}).sort(function(a,b){return new Date(b.publishedAt)-new Date(a.publishedAt)});
+  if(!keep){selSrc={};selCtry={};type="All"}
+  render();
+};
+var LINKS={
+ off:[["BLS CPI (bls.gov/cpi)","https://www.bls.gov/cpi/"],
+      ["BLS Release Calendar","https://www.bls.gov/schedule/news_release/cpi.htm"],
+      ["Federal Reserve News","https://www.federalreserve.gov/newsevents.htm"],
+      ["Fed Press Releases","https://www.federalreserve.gov/newsevents/pressreleases.htm"],
+      ["FOMC Calendar","https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"]],
+ sq:[["Financial Juice","https://www.financialjuice.com/home"],
+     ["X: @DeItaone (Walter Bloomberg)","https://x.com/DeItaone"],
+     ["X: @FirstSquawk","https://x.com/FirstSquawk"],
+     ["X: @LiveSquawk","https://x.com/LiveSquawk"],
+     ["investingLive (ex-ForexLive)","https://investinglive.com"]]
+};
+var curLink="";
+function showLinks(k){
+  var p=$("linkPanel");p.innerHTML="";
+  curLink=(curLink===k)?"":k;
+  $("offBtn").className="chip sq"+(curLink==="off"?" on":"");
+  $("sqBtn").className="chip sq"+(curLink==="sq"?" on":"");
+  if(!curLink){p.classList.remove("show");return}
+  LINKS[curLink].forEach(function(l){var a=document.createElement("a");a.textContent=l[0]+" ↗";a.href=l[1];a.target="_blank";a.rel="noopener";p.appendChild(a)});
+  p.classList.add("show");
+}
+$("offBtn").onclick=function(){showLinks("off")};
+$("sqBtn").onclick=function(){showLinks("sq")};
+un.onchange=render;
+$("ev").onchange=render;
+$("sortSel").onchange=render;
+$("pinBtn").onclick=function(){
+  var f=$("pinForm"),p=ld("nf_pin");f.classList.toggle("show");
+  $("pn").value=p.name||"";$("pf").value=p.forecast||"";$("pa").value=p.actual||"";$("pp").value=p.prev||"";
+};
+$("pSave").onclick=function(){sv("nf_pin",{name:$("pn").value.trim(),forecast:$("pf").value.trim(),actual:$("pa").value.trim(),prev:$("pp").value.trim()});drawPin();$("pinForm").classList.remove("show")};
+$("pClr").onclick=function(){sv("nf_pin",{});$("pn").value=$("pf").value=$("pa").value=$("pp").value="";drawPin()};
+$("q").oninput=drawPanel;
+$("srcBtn").onclick=function(){$("panel").classList.toggle("show");drawPanel()};
+$("clear").onclick=function(){selSrc={};selCtry={};type="All";$("q").value="";render()};
+$("all").onclick=function(){visible().forEach(function(x){readSet[x.id]=true});sv("nf_read",readSet);render()};
+drawPin();
+loadFeed();
+setInterval(function(){loadFeed(true)},15000);   // har 15 sec mein silent refresh
+setInterval(drawStat,1000);
+</script>
+</body>
+</html>
